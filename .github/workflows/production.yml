@@ -27,7 +27,7 @@ jobs:
       contents: read
       issues: write
     env:
-      PLAYWRIGHT_BASE_URL: https://internation-women-day-delta.vercel.app
+      PLAYWRIGHT_BASE_URL: https://international-women-day-from-perceval-wilhelm.vercel.app
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
