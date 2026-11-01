@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-// The CSS-art bouquet from the original page. Every part is positioned from the 0×0 .flowers anchor
+// The CSS-art bouquet, adapted from Md Usman Ansari's “CSS Blossoming Flowers at Magical Night” (MIT; see THIRD_PARTY_NOTICES.md). Every part is positioned from the 0×0 .flowers anchor
 // and grows on its own delay, so the markup stays exactly as bouquet.css expects it.
 const count = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 const after = (seconds: number) => ({ "--d": `${seconds}s` }) as CSSProperties;

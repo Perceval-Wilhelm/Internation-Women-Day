@@ -4,8 +4,8 @@ Configuration reviewed on **1 November 2026**. The site is a static card with th
 
 ## Project identity
 
-- GitHub: [Perceval-Wilhelm/Internation-Women-Day](https://github.com/Perceval-Wilhelm/Internation-Women-Day)
-- Vercel: [internation-women-day](https://vercel.com/perceval-wilhelms-projects/internation-women-day), in the personal `perceval-wilhelms-projects` workspace (Hobby)
+- GitHub: [Perceval-Wilhelm/international-women-day](https://github.com/Perceval-Wilhelm/international-women-day), renamed from `Internation-Women-Day` on 1 November 2026. GitHub redirects the old URL, and Vercel's Git link follows the repository ID.
+- Vercel: [internation-women-day](https://vercel.com/perceval-wilhelms-projects/internation-women-day), in the personal `perceval-wilhelms-projects` workspace (Hobby). The project and its domain keep the original spelling, so links already shared still work.
 - Production: [internation-women-day-delta.vercel.app](https://internation-women-day-delta.vercel.app), built from `main`. Every other branch gets a protected preview.
 
 ## How a change reaches production
@@ -51,7 +51,7 @@ Keep build settings in `vercel.json`, not the dashboard. When changing the Node 
 
 ## Go-live record
 
-On **1 November 2026**, [PR #3](https://github.com/Perceval-Wilhelm/Internation-Women-Day/pull/3) was squash-merged as `8e97332`, the first production release of the Next.js site. It also carried the bilingual redesign from PR #2, whose merge Vercel never deployed (production had stayed on PR #1's `fcafc76`).
+On **1 November 2026**, [PR #3](https://github.com/Perceval-Wilhelm/international-women-day/pull/3) was squash-merged as `8e97332`, the first production release of the Next.js site. It also carried the bilingual redesign from PR #2, whose merge Vercel never deployed (production had stayed on PR #1's `fcafc76`).
 
 - Production deployment `dpl_3DpWc4hy9TtcRC772ZscQHqDtpz8` built in 36 s with Next.js 16.4.3, Yarn 4.18.1 and functions in `sin1`.
 - The domain kept serving the old deployment until Check passed on `main`, then switched at 12:35 UTC (`X-Build: 8e97332d36c3`).

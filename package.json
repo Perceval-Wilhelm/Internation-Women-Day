@@ -1,8 +1,9 @@
 {
-  "name": "internation-women-day",
+  "name": "international-women-day",
   "private": true,
   "version": "2.0.0",
-  "description": "A bilingual International Women's Day card: a bouquet that blooms, and a personal 8 March message to send.",
+  "license": "MIT",
+  "description": "A bilingual International Women's Day site for 8 March: a CSS-art bouquet blooms under a starry night sky.",
   "type": "module",
   "packageManager": "yarn@4.18.1",
   "engines": {

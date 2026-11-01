@@ -43,4 +43,17 @@ The share images draw on `src/features/og/assets/sky.jpg`, a capture of the grow
 
 Vercel builds every branch as a protected preview and `main` as production, once the GitHub checks pass. GitHub Actions also watches the live site after each release and every six hours. See [docs/deployment.md](docs/deployment.md).
 
-Built with Next.js, React and plain CSS. The bouquet is adapted from a CSS-art original; the fonts are Cormorant Garamond, Be Vietnam Pro and Great Vibes (SIL Open Font License).
+## Tech stack
+
+| Area            | Tools                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| App             | Next.js 16 (App Router, Turbopack), React 19, TypeScript 6                                            |
+| Look and motion | Hand-written CSS (custom properties, `@property`, scroll-driven animation), Canvas 2D, Web Animations |
+| Share images    | `next/og` with local font subsets                                                                     |
+| Quality         | ESLint 10, Prettier, Vitest, Playwright with axe-core (WCAG 2.2 AA)                                   |
+| Toolchain       | Node.js 26, Yarn 4 through Corepack                                                                   |
+| Delivery        | Vercel (Fluid compute, `sin1`), Web Analytics, Speed Insights, GitHub Actions, Dependabot, CodeQL     |
+
+## License
+
+The code is under the [MIT License](LICENSE). The bouquet is adapted from [“CSS Blossoming Flowers at Magical Night”](https://codepen.io/mdusmanansari/pen/BamepLe) by Md Usman Ansari (MIT), and the fonts (Cormorant Garamond, Be Vietnam Pro, Great Vibes) are under the SIL Open Font License; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

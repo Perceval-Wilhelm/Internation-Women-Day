@@ -42,6 +42,7 @@ corepack yarn verify
 ## Dependencies and delivery
 
 - Pin direct dependency versions and commit `yarn.lock` with intentional changes. No forced installs or broad resolutions.
+- The code is MIT. Credit anything borrowed in `THIRD_PARTY_NOTICES.md` (the bouquet is Md Usman Ansari's CodePen, MIT; the fonts are OFL) and keep the font license files next to `src/features/og/assets/`.
 - Vercel builds through `vercel.json` (Next.js preset, Corepack, region `sin1`). Keep the security headers in `next.config.ts` and extend the CSP when adding any third-party origin.
 - GitHub Actions: keep actions pinned to full commit SHAs, read-only default permissions, and the check names `IWD quality`, `IWD browser` and `IWD production`. See `docs/deployment.md` before changing GitHub or Vercel settings.
 - Use Conventional Commits. Never change Git identity or add co-author or tool attribution. Commit and push only when asked.

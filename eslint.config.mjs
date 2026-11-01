@@ -18,6 +18,8 @@ export default defineConfig([
     "playwright-report/**",
     "test-results/**",
     "next-env.d.ts",
+    // The unsealed gift stays on the owner's Mac and is never linted, formatted or committed
+    "private/**",
   ]),
   {
     files: ["**/*.{js,mjs,cjs,ts,tsx}"],
