@@ -4,12 +4,14 @@ import { expect, test, type Page } from "@playwright/test";
 // Fictional cards only. @smoke tests also run against production after each deploy, so they stay read-only.
 test.use({ locale: "en-GB" });
 
-// Test visits are not readers: an empty script keeps them out of production analytics.
-test.beforeEach(async ({ page }) => {
-  await page.route(/\/_vercel\/(insights|speed-insights)\/script\.js$/, (route) =>
-    route.fulfill({ status: 200, contentType: "text/javascript", body: "" }),
-  );
-});
+// Vercel serves its analytics from obfuscated paths, so watch for the beacons themselves.
+function watchBeacons(page: Page) {
+  const beacons: string[] = [];
+  page.on("request", (request) => {
+    if (/\/(view|vitals|event)$/.test(new URL(request.url()).pathname)) beacons.push(request.url());
+  });
+  return beacons;
+}
 
 const CARD = "/for/Lan#msg=Thank%20you%20for%20everything&from=An&f=rose";
 const VI_CARD = "/gui/M%E1%BA%B9%20y%C3%AAu#msg=Con%20y%C3%AAu%20m%E1%BA%B9&from=Th%E1%BB%8Bnh";
@@ -39,6 +41,7 @@ async function axe(page: Page) {
 test.describe("the page", () => {
   test("blooms in English and remembers a switch to Vietnamese @smoke", async ({ page }) => {
     const errors = watchErrors(page);
+    const beacons = watchBeacons(page);
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByRole("heading", { level: 1, name: "Happy Women's Day" })).toBeVisible();
@@ -52,6 +55,9 @@ test.describe("the page", () => {
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
     expect(errors).toEqual([]);
+    // Automated visits must never count as readers in production analytics
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    expect(beacons).toEqual([]);
   });
 
   test("sends security headers @smoke", async ({ request }) => {

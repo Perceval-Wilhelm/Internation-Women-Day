@@ -6,6 +6,8 @@ const NAME_PATH = /^\/(for|gui)\/[^/]+/;
 export function prepareMonitoringEvent<T extends MonitoringEvent>(event: T): T | null {
   // Hobby uses page views and performance only; never forward custom events.
   if (event.type !== "pageview" && event.type !== "vital") return null;
+  // Automated browsers, our own production smoke checks included, are not readers.
+  if (typeof navigator !== "undefined" && navigator.webdriver) return null;
 
   try {
     const url = new URL(event.url);
