@@ -2712,9 +2712,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"internation-women-day@workspace:.":
+"international-women-day@workspace:.":
   version: 0.0.0-use.local
-  resolution: "internation-women-day@workspace:."
+  resolution: "international-women-day@workspace:."
   dependencies:
     "@axe-core/playwright": "npm:4.14.0"
     "@eslint-react/eslint-plugin": "npm:5.28.8"

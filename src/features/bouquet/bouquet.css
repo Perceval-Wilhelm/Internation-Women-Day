@@ -1,4 +1,6 @@
-/* The bouquet: pure-CSS art. Its colours come from the theme variables in style.css. */
+/* The bouquet: pure-CSS art adapted from “CSS Blossoming Flowers at Magical Night” by Md Usman Ansari
+   (https://codepen.io/mdusmanansari/pen/BamepLe, MIT; see THIRD_PARTY_NOTICES.md).
+   Its colours come from the theme variables in global.css. */
 .flower {
   position: absolute;
   bottom: 10vmin;

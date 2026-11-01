@@ -16,3 +16,6 @@ next-env.d.ts
 .DS_Store
 .idea/
 .vscode/
+
+# Unsealed gift content stays on the owner's Mac; only the encrypted copy is ever committed.
+private/

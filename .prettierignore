@@ -11,3 +11,6 @@ coverage/
 
 # The bouquet is hand-tuned CSS art from the original page; keep its layout as written.
 src/features/bouquet/bouquet.css
+
+# The unsealed gift is the owner's own writing; leave it exactly as typed.
+private/
