@@ -36,7 +36,7 @@ corepack yarn verify
 - Never send a card's message or sender to a server, log or analytics. Only the recipient's name may appear in a path, and analytics must keep reporting card routes as `/for/[name]` and `/gui/[name]`.
 - Card pages stay `noindex`. Keep older fragment-only links working.
 - Analytics and Speed Insights mount only in production builds, with the shared redaction in `src/lib/monitoring.ts`; Hobby has no custom events, so add none.
-- Test visits must not count as readers: the browser tests stub the analytics scripts.
+- Automated visits must not count as readers: the shared `beforeSend` drops events when `navigator.webdriver` is set, and the first `@smoke` test fails if a production page sends an analytics beacon. Vercel serves the SDK scripts from obfuscated paths, so never filter on `/_vercel/`.
 - Keep the 8 March history factual and sourced; check UN and UN Women wording before changing dates or numbers.
 
 ## Dependencies and delivery

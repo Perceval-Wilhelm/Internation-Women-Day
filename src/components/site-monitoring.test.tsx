@@ -44,6 +44,16 @@ describe("site monitoring", () => {
     );
   });
 
+  it("drops events from automated browsers such as the production smoke checks", () => {
+    Object.defineProperty(navigator, "webdriver", { value: true, configurable: true });
+    try {
+      expect(prepareMonitoringEvent({ type: "pageview", url: "https://example.test/" })).toBeNull();
+    } finally {
+      Reflect.deleteProperty(navigator, "webdriver");
+    }
+    expect(prepareMonitoringEvent({ type: "pageview", url: "https://example.test/" })).not.toBeNull();
+  });
+
   it("drops custom events even if another caller adds one later", () => {
     expect(prepareMonitoringEvent({ type: "event", url: "https://example.test/" })).toBeNull();
   });
