@@ -1,19 +1,77 @@
 // The living sky: twinkling stars, shooting stars, fireflies that drift toward the pointer,
 // and a flower that blooms wherever you tap, then lets its petals fall.
-(() => {
-  const hero = document.querySelector('.hero');
-  const canvas = hero.querySelector('.fx');
-  const ctx = canvas.getContext('2d');
-  const meteor = hero.querySelector('.shooting-star');
-  const hint = hero.querySelector('[data-hint]');
-  const calm = matchMedia('(prefers-reduced-motion: reduce)');
-  const TAU = Math.PI * 2;
-  const OPEN_MS = 900;
-  const HOLD_MS = 2600;
 
-  const flies = [];
-  const blooms = [];
-  const bits = [];
+export type Sky = {
+  begin(): void;
+  refreshTheme(): void;
+  destroy(): void;
+};
+
+type RGB = [number, number, number];
+type Theme = { a: RGB; b: RGB; c: RGB; glow: RGB; spark: RGB; core: RGB };
+type Fly = { x: number; y: number; vx: number; vy: number; size: number; seed: number; lift: number; gold: boolean };
+type Bloom = {
+  x: number;
+  y: number;
+  born: number;
+  r: number;
+  petals: number;
+  turn: number;
+  spin: number;
+  colors: Theme;
+};
+type Spark = {
+  kind: "spark";
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  age: number;
+  life: number;
+  size: number;
+  gold: boolean;
+};
+type Petal = {
+  kind: "petal";
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  age: number;
+  life: number;
+  size: number;
+  turn: number;
+  spin: number;
+  flip: number;
+  flipSpeed: number;
+  sway: number;
+  colors: Theme;
+};
+
+const TAU = Math.PI * 2;
+const OPEN_MS = 900;
+const HOLD_MS = 2600;
+
+const rand = (min: number, max: number) => min + Math.random() * (max - min);
+const easeOutBack = (t: number) => 1 + 2.70158 * (t - 1) ** 3 + 1.70158 * (t - 1) ** 2;
+const rgba = (c: RGB, alpha: number) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
+
+export function createSky(hero: HTMLElement): Sky {
+  const canvas = hero.querySelector<HTMLCanvasElement>(".fx");
+  const ctx = canvas?.getContext("2d");
+  return canvas && ctx ? livingSky(hero, canvas, ctx) : { begin() {}, refreshTheme() {}, destroy() {} };
+}
+
+function livingSky(hero: HTMLElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): Sky {
+  const meteor = hero.querySelector<HTMLElement>(".shooting-star");
+  const hint = hero.querySelector<HTMLElement>("[data-hint]");
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  const teardown = new AbortController();
+  const { signal } = teardown;
+
+  const flies: Fly[] = [];
+  const blooms: Bloom[] = [];
+  const bits: (Spark | Petal)[] = [];
   const pointer = { x: 0, y: 0, active: false };
   let width = 0;
   let height = 0;
@@ -23,58 +81,63 @@
   let onScreen = true;
   let startedAt = 0;
   let last = 0;
-  let theme = null;
-  let themeKey = '';
-  let glowSprite = null;
-  let goldSprite = null;
-
-  const rand = (min, max) => min + Math.random() * (max - min);
-  const easeOutBack = t => 1 + 2.70158 * (t - 1) ** 3 + 1.70158 * (t - 1) ** 2;
+  let frameId = 0;
+  let shootTimer = 0;
+  let themeTimer = 0;
+  // Set by readTheme(), which runs before anything is drawn
+  let theme!: Theme;
+  let themeKey = "";
+  let glowSprite!: HTMLCanvasElement;
+  let goldSprite!: HTMLCanvasElement;
 
   // Stars are box-shadows on four tiny elements, so the browser twinkles them without any JS per frame.
   function scatterStars() {
-    const tints = ['255 250 255', '233 213 255', '255 236 200', '210 230 255'];
-    hero.querySelectorAll('.stars i').forEach((layer, index) => {
-      const shadows = [];
+    const tints = ["255 250 255", "233 213 255", "255 236 200", "210 230 255"];
+    hero.querySelectorAll<HTMLElement>(".stars i").forEach((layer, index) => {
+      const shadows: string[] = [];
       for (let i = 0; i < [110, 60, 26, 12][index]; i++) {
         const x = rand(0, 100).toFixed(2);
         const y = (Math.random() ** 1.4 * 75).toFixed(2);
         shadows.push(`${x}vw ${y}vh rgb(${tints[i % tints.length]} / ${rand(0.45, 1).toFixed(2)})`);
       }
-      layer.style.boxShadow = shadows.join(',');
+      layer.style.boxShadow = shadows.join(",");
     });
   }
 
   // Canvas colours: let the 2D context normalise any CSS colour, then read back its channels.
-  const probe = document.createElement('canvas').getContext('2d');
-  function channels(color) {
-    probe.fillStyle = '#fff';
+  const probe = document.createElement("canvas").getContext("2d");
+  function channels(color: string): RGB {
+    if (!probe) return [255, 255, 255];
+    probe.fillStyle = "#fff";
     probe.fillStyle = color;
-    const value = probe.fillStyle;
-    if (value[0] === '#') return [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16));
-    return value.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const value = String(probe.fillStyle);
+    if (value[0] === "#") return [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16)) as RGB;
+    return (value.match(/[\d.]+/g) ?? ["255", "255", "255"]).slice(0, 3).map(Number) as RGB;
   }
-  const rgba = (c, alpha) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
 
-  function sprite(color) {
+  function sprite(color: RGB) {
     const size = 64;
-    const image = document.createElement('canvas');
+    const image = document.createElement("canvas");
     image.width = image.height = size;
-    const g = image.getContext('2d');
-    const glow = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    glow.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    glow.addColorStop(0.2, rgba(color, 0.9));
-    glow.addColorStop(0.5, rgba(color, 0.25));
-    glow.addColorStop(1, rgba(color, 0));
-    g.fillStyle = glow;
-    g.fillRect(0, 0, size, size);
+    const g = image.getContext("2d");
+    if (g) {
+      const glow = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      glow.addColorStop(0, "rgba(255, 255, 255, 1)");
+      glow.addColorStop(0.2, rgba(color, 0.9));
+      glow.addColorStop(0.5, rgba(color, 0.25));
+      glow.addColorStop(1, rgba(color, 0));
+      g.fillStyle = glow;
+      g.fillRect(0, 0, size, size);
+    }
     return image;
   }
 
   // Cheap to call on every tap; sprites are only rebuilt when the flower colours actually changed.
   function readTheme() {
     const style = getComputedStyle(hero);
-    const values = ['--petal-a', '--petal-b', '--petal-c', '--glow', '--spark-a', '--core-a'].map(name => style.getPropertyValue(name).trim() || '#fff');
+    const values = ["--petal-a", "--petal-b", "--petal-c", "--glow", "--spark-a", "--core-a"].map(
+      (name) => style.getPropertyValue(name).trim() || "#fff",
+    );
     const key = values.join();
     if (key === themeKey) return;
     themeKey = key;
@@ -93,12 +156,12 @@
     dpr = ratio;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
-    const count = Math.round(Math.min(46, (width * height) / 24000));
-    while (flies.length < count) flies.push(makeFly(true));
-    flies.length = count;
+    const total = Math.round(Math.min(46, (width * height) / 24000));
+    while (flies.length < total) flies.push(makeFly(true));
+    flies.length = total;
   }
 
-  function makeFly(anywhere) {
+  function makeFly(anywhere: boolean): Fly {
     return {
       x: rand(0, width),
       y: anywhere ? rand(height * 0.2, height) : height + 20,
@@ -111,7 +174,7 @@
     };
   }
 
-  function moveFly(f, now, dt) {
+  function moveFly(f: Fly, now: number, dt: number) {
     const wander = (now + f.seed * 37) * 0.0006;
     f.vx += Math.sin(wander + f.seed) * 0.018 * dt;
     f.vy += (Math.cos(wander * 1.3 + f.seed) * 0.014 - f.lift * 0.02) * dt;
@@ -134,25 +197,25 @@
     if (f.y < -30 || f.x < -30 || f.x > width + 30) Object.assign(f, makeFly(false));
   }
 
-  function drawFly(f, now, fadeIn) {
+  function drawFly(f: Fly, now: number, fadeIn: number) {
     const flicker = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin((now + f.seed * 50) * 0.003));
     const s = f.size * (0.8 + flicker * 0.4);
     ctx.globalAlpha = flicker * fadeIn;
     ctx.drawImage(f.gold ? goldSprite : glowSprite, f.x - s, f.y - s, s * 2, s * 2);
   }
 
-  function petalPath(length, half) {
+  function petalPath(length: number, half: number) {
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.bezierCurveTo(half, -length * 0.25, half * 0.9, -length * 0.85, 0, -length);
     ctx.bezierCurveTo(-half * 0.9, -length * 0.85, -half, -length * 0.25, 0, 0);
   }
 
-  function drawRing(count, length, half, base, tip, offset) {
+  function drawRing(petals: number, length: number, half: number, base: RGB, tip: RGB, offset: number) {
     if (length <= 0) return;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < petals; i++) {
       ctx.save();
-      ctx.rotate(offset + (i / count) * TAU);
+      ctx.rotate(offset + (i / petals) * TAU);
       const fill = ctx.createLinearGradient(0, 0, 0, -length);
       fill.addColorStop(0, rgba(base, 0.96));
       fill.addColorStop(1, rgba(tip, 0.96));
@@ -163,39 +226,58 @@
     }
   }
 
-  function bloomAt(x, y) {
+  function bloomAt(x: number, y: number) {
     if (!started || calm.matches) return;
     readTheme();
     const unit = Math.min(width, height);
-    blooms.push({ x, y, born: performance.now(), r: unit * rand(0.045, 0.07), petals: 5 + Math.floor(rand(0, 3)), turn: rand(0, TAU), spin: rand(-1, 1) * 0.00025, colors: theme });
+    blooms.push({
+      x,
+      y,
+      born: performance.now(),
+      r: unit * rand(0.045, 0.07),
+      petals: 5 + Math.floor(rand(0, 3)),
+      turn: rand(0, TAU),
+      spin: rand(-1, 1) * 0.00025,
+      colors: theme,
+    });
     if (blooms.length > 12) blooms.shift();
     for (let i = 0; i < 18; i++) {
       const angle = rand(0, TAU);
       const speed = rand(1.2, 4.2);
-      bits.push({ kind: 'spark', x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 0.6, age: 0, life: rand(40, 80), size: rand(3, 7), gold: Math.random() < 0.6 });
+      bits.push({
+        kind: "spark",
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 0.6,
+        age: 0,
+        life: rand(40, 80),
+        size: rand(3, 7),
+        gold: Math.random() < 0.6,
+      });
     }
     if (bits.length > 400) bits.splice(0, bits.length - 400);
-    hint?.classList.add('is-done');
+    hint?.classList.add("is-done");
     start();
   }
 
-  function drawBloom(b, now) {
+  function drawBloom(b: Bloom, now: number) {
     const age = now - b.born;
     const progress = Math.min(age / OPEN_MS, 1);
     const r = b.r * easeOutBack(progress) * (1 + Math.sin(age * 0.004) * 0.025 * progress);
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.rotate(b.turn + age * b.spin);
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = 0.55 * progress;
     ctx.drawImage(glowSprite, -r * 2.4, -r * 2.4, r * 4.8, r * 4.8);
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
     drawRing(b.petals, r, r * 0.52, b.colors.a, b.colors.b, 0);
     drawRing(b.petals, r * 0.62, r * 0.36, b.colors.c, b.colors.b, Math.PI / b.petals);
     if (r > 0) {
       const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.22);
-      core.addColorStop(0, '#fffbea');
+      core.addColorStop(0, "#fffbea");
       core.addColorStop(0.6, rgba(b.colors.core, 1));
       core.addColorStop(1, rgba(b.colors.core, 0));
       ctx.fillStyle = core;
@@ -207,13 +289,13 @@
   }
 
   // When a bloom is done, its petals come loose and flutter down.
-  function release(b, now) {
+  function release(b: Bloom, now: number) {
     const turn = b.turn + (now - b.born) * b.spin;
     for (let i = 0; i < b.petals; i++) {
       const angle = turn + (i / b.petals) * TAU - Math.PI / 2;
       const push = rand(0.6, 1.6);
       bits.push({
-        kind: 'petal',
+        kind: "petal",
         x: b.x + Math.cos(angle) * b.r * 0.55,
         y: b.y + Math.sin(angle) * b.r * 0.55,
         vx: Math.cos(angle) * push,
@@ -231,9 +313,9 @@
     }
   }
 
-  function moveBit(p, dt) {
+  function moveBit(p: Spark | Petal, dt: number) {
     p.age += dt;
-    if (p.kind === 'spark') {
+    if (p.kind === "spark") {
       const drag = 0.94 ** dt;
       p.vx *= drag;
       p.vy = p.vy * drag + 0.03 * dt;
@@ -249,14 +331,14 @@
     return p.age < p.life && p.y < height + 60;
   }
 
-  function drawBit(p) {
+  function drawBit(p: Spark | Petal) {
     const t = p.age / p.life;
-    if (p.kind === 'spark') {
+    if (p.kind === "spark") {
       const s = p.size * (1 - t * 0.6);
-      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 1 - t;
       ctx.drawImage(p.gold ? goldSprite : glowSprite, p.x - s, p.y - s, s * 2, s * 2);
-      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalCompositeOperation = "source-over";
       return;
     }
     ctx.globalAlpha = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
@@ -274,7 +356,7 @@
     ctx.restore();
   }
 
-  function frame(now) {
+  function frame(now: number) {
     if (!running) return;
     const dt = Math.min((now - last) / 16.667, 3);
     last = now;
@@ -282,12 +364,12 @@
     ctx.clearRect(0, 0, width, height);
 
     const fadeIn = Math.min((now - startedAt) / 2500, 1);
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = "lighter";
     for (const f of flies) {
       moveFly(f, now, dt);
       drawFly(f, now, fadeIn);
     }
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
     for (let i = 0; i < blooms.length; i++) {
@@ -299,26 +381,27 @@
       else bits.splice(i--, 1);
     }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(frame);
+    frameId = requestAnimationFrame(frame);
   }
 
   function start() {
     if (running || !started || !onScreen || document.hidden || calm.matches) return;
     running = true;
     last = performance.now();
-    requestAnimationFrame(frame);
+    frameId = requestAnimationFrame(frame);
   }
 
   function stop() {
     running = false;
+    cancelAnimationFrame(frameId);
   }
 
   function shootLater() {
-    setTimeout(shoot, rand(4000, 11000));
+    shootTimer = window.setTimeout(shoot, rand(4000, 11000));
   }
 
   function shoot() {
-    if (running && meteor.animate) {
+    if (running && meteor?.animate) {
       const x = rand(0.08, 0.7) * width;
       const y = rand(0.04, 0.3) * height;
       const angle = rand(14, 34);
@@ -328,54 +411,74 @@
         [
           { transform: `translate(${x}px, ${y}px) rotate(${angle}deg) scaleX(0.2)`, opacity: 0 },
           { opacity: 1, offset: 0.2 },
-          { transform: `translate(${x + Math.cos(rad) * distance}px, ${y + Math.sin(rad) * distance}px) rotate(${angle}deg) scaleX(1)`, opacity: 0 },
+          {
+            transform: `translate(${x + Math.cos(rad) * distance}px, ${y + Math.sin(rad) * distance}px) rotate(${angle}deg) scaleX(1)`,
+            opacity: 0,
+          },
         ],
-        { duration: rand(900, 1500), easing: 'cubic-bezier(.35, 0, .65, 1)' },
+        { duration: rand(900, 1500), easing: "cubic-bezier(.35, 0, .65, 1)" },
       );
     }
     shootLater();
   }
 
-  // main.js calls this once the page is ready to bloom.
-  function begin() {
-    if (started) return;
-    started = true;
-    startedAt = performance.now();
-    resize();
-    readTheme();
-    start();
-    if (!calm.matches) shootLater();
-  }
-
-  function localPoint(event) {
+  function localPoint(event: PointerEvent): [number, number] {
     const rect = hero.getBoundingClientRect();
     return [event.clientX - rect.left, event.clientY - rect.top];
   }
 
-  hero.addEventListener('pointerdown', event => {
-    if (event.button > 0 || event.target.closest('a, button, input, textarea, label, .card')) return;
-    bloomAt(...localPoint(event));
-  });
-  hero.addEventListener('pointermove', event => {
-    [pointer.x, pointer.y] = localPoint(event);
-    pointer.active = true;
-  }, { passive: true });
-  hero.addEventListener('pointerleave', () => { pointer.active = false; });
+  hero.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (event.button > 0 || (event.target as Element).closest("a, button, input, textarea, label, .card")) return;
+      bloomAt(...localPoint(event));
+    },
+    { signal },
+  );
+  hero.addEventListener(
+    "pointermove",
+    (event) => {
+      [pointer.x, pointer.y] = localPoint(event);
+      pointer.active = true;
+    },
+    { passive: true, signal },
+  );
+  hero.addEventListener("pointerleave", () => (pointer.active = false), { signal });
+  document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()), { signal });
+  window.addEventListener("resize", () => started && resize(), { signal });
 
-  new IntersectionObserver(([entry]) => {
+  const visibility = new IntersectionObserver(([entry]) => {
     onScreen = entry.isIntersecting;
     if (onScreen) start();
     else stop();
-  }).observe(hero);
-  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
-  window.addEventListener('resize', () => started && resize());
+  });
+  visibility.observe(hero);
 
   scatterStars();
+  readTheme();
 
-  window.Sky = {
-    begin,
-    bloomAt,
-    // Fireflies pick up new flower colours once the CSS cross-fade has finished
-    refreshTheme: () => setTimeout(readTheme, 1300),
+  return {
+    // Called once the page is ready to bloom.
+    begin() {
+      if (started) return;
+      started = true;
+      startedAt = performance.now();
+      resize();
+      readTheme();
+      start();
+      if (!calm.matches) shootLater();
+    },
+    // Fireflies pick up new flower colours once the CSS cross-fade has finished.
+    refreshTheme() {
+      clearTimeout(themeTimer);
+      themeTimer = window.setTimeout(readTheme, 1300);
+    },
+    destroy() {
+      stop();
+      teardown.abort();
+      visibility.disconnect();
+      clearTimeout(shootTimer);
+      clearTimeout(themeTimer);
+    },
   };
-})();
+}
