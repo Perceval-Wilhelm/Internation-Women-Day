@@ -5,8 +5,8 @@ Configuration reviewed on **1 November 2026**. The site is a static card with th
 ## Project identity
 
 - GitHub: [Perceval-Wilhelm/international-women-day](https://github.com/Perceval-Wilhelm/international-women-day), renamed from `Internation-Women-Day` on 1 November 2026. GitHub redirects the old URL, and Vercel's Git link follows the repository ID.
-- Vercel: [internation-women-day](https://vercel.com/perceval-wilhelms-projects/internation-women-day), in the personal `perceval-wilhelms-projects` workspace (Hobby). The project and its domain keep the original spelling, so links already shared still work.
-- Production: [internation-women-day-delta.vercel.app](https://internation-women-day-delta.vercel.app), built from `main`. Every other branch gets a protected preview.
+- Vercel: [international-women-day](https://vercel.com/perceval-wilhelms-projects/international-women-day), in the personal `perceval-wilhelms-projects` workspace (Hobby), renamed from `internation-women-day` on 1 November 2026. The old `internation-women-day-delta.vercel.app` domain still serves production, so links already shared keep working.
+- Production: [international-women-day-from-perceval-wilhelm.vercel.app](https://international-women-day-from-perceval-wilhelm.vercel.app), built from `main`. Every other branch gets a protected preview.
 
 ## How a change reaches production
 

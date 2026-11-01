@@ -4,7 +4,7 @@ A bilingual (English and Vietnamese) International Women's Day card. A CSS-art b
 
 Anyone can write a personal card: pick her flowers, write a few words, and send the link. The recipient gets a sealed envelope with her name on it; opening it grows her bouquet and reveals the message.
 
-**Live:** [internation-women-day-delta.vercel.app](https://internation-women-day-delta.vercel.app)
+**Live:** [international-women-day-from-perceval-wilhelm.vercel.app](https://international-women-day-from-perceval-wilhelm.vercel.app)
 
 ## How a card link works
 
