@@ -36,7 +36,7 @@ Actions are pinned to full commit SHAs, the default token is read-only (only the
 
 | Setting               | Value                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------- |
-| Framework             | Next.js, from `vercel.json`                                                            |
+| Framework             | Next.js, in `vercel.json` and the dashboard                                            |
 | Install / build       | `npx --yes corepack@0.36.0 yarn install --immutable` / `… yarn build`                  |
 | Node.js               | 26.x (dashboard and `engines`); CI pins the 26.13.0 patch                              |
 | Functions             | Fluid compute, region `sin1` (Singapore, from `vercel.json`)                           |
@@ -44,15 +44,26 @@ Actions are pinned to full commit SHAs, the default token is read-only (only the
 | Source maps           | Protected                                                                              |
 | Deployment checks     | IWD quality, IWD browser: block the production alias                                   |
 | Web Analytics         | On, production builds only, card names redacted (`src/lib/monitoring.ts`)              |
-| Speed Insights        | Wired in code; enable it in the dashboard (see below)                                  |
+| Speed Insights        | Wired in code; not yet enabled for the project (see below)                             |
 | Security headers      | CSP, `nosniff`, `DENY` framing, strict referrer, permissions policy (`next.config.ts`) |
 
 Keep build settings in `vercel.json`, not the dashboard. When changing the Node major, update `.nvmrc`, `engines`, the CI browser job and `@types/node` together, after checking that Vercel supports it.
 
 ### Still to do by hand
 
-- **Speed Insights:** the CLI warns that enabling it may add charges, so it needs the owner's confirmation. Run `vercel project speed-insights enable internation-women-day --scope=perceval-wilhelms-projects` in a terminal. Until then, production requests for its script return 404, which is harmless.
-- **Framework preset:** after the Next.js migration is on `main`, set the dashboard preset to match `vercel.json` with `vercel project update internation-women-day --framework nextjs --scope=perceval-wilhelms-projects`. Doing it earlier would break a rebuild of the old static site.
+- **Speed Insights:** the CLI warns that enabling it may add charges, so it needs the owner's confirmation. Run `vercel project speed-insights enable internation-women-day --scope=perceval-wilhelms-projects` in a terminal. Vercel already serves the script; the project only starts recording once this is enabled.
+
+## Go-live record
+
+On **1 November 2026**, [PR #3](https://github.com/Perceval-Wilhelm/Internation-Women-Day/pull/3) was squash-merged as `8e97332`, the first production release of the Next.js site. It also carried the bilingual redesign from PR #2, whose merge Vercel never deployed (production had stayed on PR #1's `fcafc76`).
+
+- Production deployment `dpl_3DpWc4hy9TtcRC772ZscQHqDtpz8` built in 36 s with Next.js 16.4.3, Yarn 4.18.1 and functions in `sin1`.
+- The domain kept serving the old deployment until Check passed on `main`, then switched at 12:35 UTC (`X-Build: 8e97332d36c3`).
+- **Watch production** ran from the deployment event and passed. The 10 `@smoke` checks also passed from a local run against the live domain.
+- New card pages render on demand in `sin1` (about 1.3 s, then cached), and share images for unseen names render there too.
+- The dashboard framework preset was switched to Next.js after the merge.
+
+Dependabot can't yet fix the moderate `minimatch` advisory: version 11.0.1 conflicts with ESLint 10's `^10.2.6` requirement. It affects only the lint toolchain, and the CI audit fails on high and critical advisories only.
 
 ## Observability
 
