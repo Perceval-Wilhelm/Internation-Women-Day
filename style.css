@@ -33,9 +33,13 @@ body {
 
 .happy-woman-day {
   color: white;
-  font-size: 50px;
+  /* scales with vmin like the flowers so they don't collide; z-index keeps it readable where they must (phone landscape) */
+  font-size: min(50px, 6vmin);
   position: fixed;
-  top: 80px;
+  top: 3vh;
+  z-index: 1;
+  padding: 0 16px;
+  text-align: center;
 }
 
 .flowers {
