@@ -44,14 +44,10 @@ Actions are pinned to full commit SHAs, the default token is read-only (only the
 | Source maps           | Protected                                                                              |
 | Deployment checks     | IWD quality, IWD browser: block the production alias                                   |
 | Web Analytics         | On, production builds only, card names redacted (`src/lib/monitoring.ts`)              |
-| Speed Insights        | Wired in code; not yet enabled for the project (see below)                             |
+| Speed Insights        | On, production builds only, same redaction                                             |
 | Security headers      | CSP, `nosniff`, `DENY` framing, strict referrer, permissions policy (`next.config.ts`) |
 
 Keep build settings in `vercel.json`, not the dashboard. When changing the Node major, update `.nvmrc`, `engines`, the CI browser job and `@types/node` together, after checking that Vercel supports it.
-
-### Still to do by hand
-
-- **Speed Insights:** the CLI warns that enabling it may add charges, so it needs the owner's confirmation. Run `vercel project speed-insights enable internation-women-day --scope=perceval-wilhelms-projects` in a terminal. Vercel already serves the script; the project only starts recording once this is enabled.
 
 ## Go-live record
 
@@ -62,13 +58,14 @@ On **1 November 2026**, [PR #3](https://github.com/Perceval-Wilhelm/Internation-
 - **Watch production** ran from the deployment event and passed. The 10 `@smoke` checks also passed from a local run against the live domain.
 - New card pages render on demand in `sin1` (about 1.3 s, then cached), and share images for unseen names render there too.
 - The dashboard framework preset was switched to Next.js after the merge.
+- The first real visit sent a page view and Web Vitals, and the project reports data for both Web Analytics and Speed Insights. `vercel project speed-insights enable`, which the CLI flags as possibly adding charges, was not needed.
 
 Dependabot can't yet fix the moderate `minimatch` advisory: version 11.0.1 conflicts with ESLint 10's `^10.2.6` requirement. It affects only the lint toolchain, and the CI audit fails on high and critical advisories only.
 
 ## Observability
 
 - **Web Analytics:** page views per route. Card visits appear as `/for/[name]` and `/gui/[name]`, so they count opened cards by language without recording who they were for. Hobby has no custom events.
-- **Speed Insights:** real-user Core Web Vitals, once enabled.
+- **Speed Insights:** real-user Core Web Vitals per route.
 - **Vercel Observability and logs:** invocations, errors and latency for card pages and share images (log retention on Hobby is short).
 - **IWD production:** synthetic checks after each release and every six hours, with GitHub issues as alerts. Scheduled workflows pause after 60 days without repository activity; re-enable them from the Actions tab.
 
